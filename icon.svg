@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Premium Dark Obsidian Background Gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#1e2029" />
+      <stop offset="100%" stop-color="#0b0c10" />
+    </radialGradient>
+    
+    <!-- Premium Gold Metallic Gradient -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082" />
+      <stop offset="30%" stop-color="#FFB300" />
+      <stop offset="70%" stop-color="#FF8F00" />
+      <stop offset="100%" stop-color="#FF6F00" />
+    </linearGradient>
+
+    <!-- Subtle Neon Red Accent for Nasdaq/Trading Feel -->
+    <linearGradient id="red-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF1744" />
+      <stop offset="100%" stop-color="#FF8A80" />
+    </linearGradient>
+
+    <!-- Outer Glow Shadow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bg-grad)" stroke="#FFB300" stroke-width="4" stroke-opacity="0.15" />
+
+  <!-- Elegant Decorative Circles in the background -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#gold-grad)" stroke-width="1.5" stroke-opacity="0.08" stroke-dasharray="8 8" />
+  <circle cx="256" cy="256" r="170" fill="none" stroke="url(#red-grad)" stroke-width="1" stroke-opacity="0.05" />
+
+  <!-- Candlestick elements (Trading concept) -->
+  <g filter="url(#glow)">
+    <!-- Bullish Gold Candle (Left) -->
+    <line x1="170" y1="180" x2="170" y2="340" stroke="url(#gold-grad)" stroke-width="4" stroke-linecap="round" />
+    <rect x="150" y="210" width="40" height="90" rx="8" fill="url(#gold-grad)" />
+
+    <!-- Bullish Gold Candle (Center-Right) -->
+    <line x1="340" y1="140" x2="340" y2="300" stroke="url(#gold-grad)" stroke-width="4" stroke-linecap="round" />
+    <rect x="320" y="170" width="40" height="90" rx="8" fill="url(#gold-grad)" />
+    
+    <!-- Sleek Neon Red Bearish Candle (Center-Left) -->
+    <line x1="256" y1="200" x2="256" y2="380" stroke="url(#red-grad)" stroke-width="4" stroke-linecap="round" />
+    <rect x="236" y="230" width="40" height="110" rx="8" fill="url(#red-grad)" />
+  </g>
+
+  <!-- Elegant text 'NQ' in the center -->
+  <text x="256" y="125" font-family="'Outfit', 'Inter', sans-serif" font-size="38" font-weight="900" fill="url(#gold-grad)" text-anchor="middle" letter-spacing="4" opacity="0.9">NASDAQ</text>
+  <text x="256" y="445" font-family="'Outfit', 'Inter', sans-serif" font-size="28" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="2" opacity="0.7">DIARY</text>
+</svg>
