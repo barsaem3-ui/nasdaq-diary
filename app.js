@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '7.0';
+const APP_VERSION = '7.1';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -523,7 +523,7 @@ function displayPreview(base64Data, type) {
 // 5. Nasdaq P&L Calculations & Formatting
 // ==========================================================================
 function formatCurrency(value) {
-    const sign = value >= 0 ? '+' : '';
+    const sign = value > 0 ? '+' : (value < 0 ? '-' : '');
     const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD'
