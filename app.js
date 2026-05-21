@@ -6,6 +6,28 @@
  * ==========================================================================
  */
 
+// Force cache cleanup & Service Worker unregistration if version changes
+const APP_VERSION = '3.0';
+if (localStorage.getItem('app_version') !== APP_VERSION) {
+    localStorage.setItem('app_version', APP_VERSION);
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let reg of registrations) {
+                reg.unregister();
+            }
+        });
+    }
+    caches.keys().then(names => {
+        for (let name of names) {
+            caches.delete(name);
+        }
+    });
+    // Hard reload the browser window to clear local caches
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 300);
+}
+
 // Register Service Worker for PWA (Installable App)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -401,8 +423,8 @@ window.clearZoneImage = clearZoneImage;
 
 function setupImageDropZones() {
     const configureZone = (zone, fileInput, container, imgPreview, type) => {
-        // 1. Click to trigger file input
-        zone.addEventListener('click', (e) => {
+        // 1. Double click to trigger file input
+        zone.addEventListener('dblclick', (e) => {
             // Avoid triggering when delete mode overlay is active
             if (imageDeleteModes[type]) return;
             if (e.target.closest('.delete-overlay')) return;
@@ -846,6 +868,14 @@ function openTradeModal(editingId = null) {
     const localISOTime = (new Date(now - offset)).toISOString().slice(0, 16);
     elements.tradeDate.value = localISOTime;
     
+    const modalThoughtsSection = document.querySelector('.modal-thoughts-section');
+    const thoughtInputs = [
+        document.getElementById('trade-thought-signal'),
+        document.getElementById('trade-thought-reason'),
+        document.getElementById('trade-thought-tech'),
+        document.getElementById('trade-thought-psych')
+    ];
+    
     if (editingId) {
         // Editing Mode
         const trade = tradesList.find(t => t.id === editingId);
@@ -885,6 +915,12 @@ function openTradeModal(editingId = null) {
         if (trade.entry_image_url) displayPreview(trade.entry_image_url, 'entry');
         if (trade.exit_image_url) displayPreview(trade.exit_image_url, 'exit');
         
+        // Show thoughts section and make them required
+        if (modalThoughtsSection) modalThoughtsSection.style.display = 'block';
+        thoughtInputs.forEach(input => {
+            if (input) input.setAttribute('required', '');
+        });
+        
     } else {
         // Create Mode
         elements.modalTitle.querySelector('span').textContent = '새로운 매매기록 작성';
@@ -898,6 +934,12 @@ function openTradeModal(editingId = null) {
         document.getElementById('trade-thought-reason').value = localStorage.getItem('thought_reason') || '';
         document.getElementById('trade-thought-tech').value = localStorage.getItem('thought_tech') || '';
         document.getElementById('trade-thought-psych').value = localStorage.getItem('thought_psych') || '';
+        
+        // Hide thoughts section and make them not required
+        if (modalThoughtsSection) modalThoughtsSection.style.display = 'none';
+        thoughtInputs.forEach(input => {
+            if (input) input.removeAttribute('required');
+        });
     }
     
     calculatePnLOnForm();
