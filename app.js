@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '5.0';
+const APP_VERSION = '6.0';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -1137,6 +1137,9 @@ function loadThoughts() {
     if (elements.thoughtReason) elements.thoughtReason.value = localStorage.getItem('thought_reason') || '';
     if (elements.thoughtTech) elements.thoughtTech.value = localStorage.getItem('thought_tech') || '';
     if (elements.thoughtPsych) elements.thoughtPsych.value = localStorage.getItem('thought_psych') || '';
+    
+    // Scale font size to fit text in the container on initial load
+    setTimeout(adjustThoughtsFontSizes, 50); // slight delay to ensure elements are rendered and have dimensions
 }
 
 function saveThoughts() {
@@ -1149,6 +1152,34 @@ function saveThoughts() {
     localStorage.setItem('thought_reason', reason);
     localStorage.setItem('thought_tech', tech);
     localStorage.setItem('thought_psych', psych);
+}
+
+function adjustTextareaFontSize(textarea) {
+    if (!textarea || textarea.clientHeight === 0) return;
+    
+    // Reset to default max font-size first
+    textarea.style.fontSize = '1.7rem';
+    textarea.style.lineHeight = '2.3rem';
+    
+    let fontSize = 1.7;
+    const minFontSize = 0.75; // Allow scaling down even slightly further if needed
+    const step = 0.05;
+    
+    // Iteratively shrink font size while content overflows height
+    while (textarea.scrollHeight > textarea.clientHeight && fontSize > minFontSize) {
+        fontSize -= step;
+        textarea.style.fontSize = `${fontSize}rem`;
+        textarea.style.lineHeight = `${fontSize * 1.35}rem`;
+    }
+}
+
+function adjustThoughtsFontSizes() {
+    const thoughtInputs = [elements.thoughtSignal, elements.thoughtReason, elements.thoughtTech, elements.thoughtPsych];
+    thoughtInputs.forEach(input => {
+        if (input) {
+            adjustTextareaFontSize(input);
+        }
+    });
 }
 
 // ==========================================================================
@@ -1220,11 +1251,14 @@ function bindEventListeners() {
     // Sync Button
     elements.btnSyncNow.addEventListener('click', syncDataWithCloud);
     
-    // Thoughts Panel Auto-Save on Input
+    // Thoughts Panel Auto-Save and Font Auto-Scaling on Input
     const thoughtInputs = [elements.thoughtSignal, elements.thoughtReason, elements.thoughtTech, elements.thoughtPsych];
     thoughtInputs.forEach(input => {
         if (input) {
-            input.addEventListener('input', saveThoughts);
+            input.addEventListener('input', () => {
+                saveThoughts();
+                adjustTextareaFontSize(input);
+            });
         }
     });
     
@@ -1257,6 +1291,9 @@ function bindEventListeners() {
         if (e.target === elements.modalTrade) closeTradeModal();
         if (e.target === elements.modalSettings) closeSettingsModal();
     });
+    
+    // Dynamic text area font resize on window resize
+    window.addEventListener('resize', adjustThoughtsFontSizes);
 }
 
 // Copy SQL Script to Clipboard helper

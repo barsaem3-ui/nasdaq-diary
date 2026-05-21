@@ -299,12 +299,13 @@ body {
     border-radius: 8px;
     color: var(--text-primary);
     padding: 0.35rem 0.6rem;
-    font-size: 1.7rem !important;
+    font-size: 1.7rem;
     line-height: 2.3rem;
     transition: var(--transition-smooth);
     resize: none;
     font-family: inherit;
     width: 100%;
+    overflow-y: hidden;
 }
 
 .thoughts-panel .thought-input:focus {
