@@ -219,7 +219,7 @@ async function syncDataWithCloud() {
     try {
         // 1. Fetch cloud trades
         const { data: cloudTrades, error } = await supabaseClient
-            .from('trades')
+            .from('nasdaq_diary_trades')
             .select('*');
             
         if (error) throw error;
@@ -236,7 +236,7 @@ async function syncDataWithCloud() {
             delete cloudPayload._dirty; // Internal sync flags if any
             
             const { error: uploadError } = await supabaseClient
-                .from('trades')
+                .from('nasdaq_diary_trades')
                 .upsert([cloudPayload]);
                 
             if (uploadError) console.error('Cloud 업로드 누락 에러:', uploadError);
@@ -953,7 +953,7 @@ async function handleTradeFormSubmit(e) {
         if (supabaseClient) {
             try {
                 const { error } = await supabaseClient
-                    .from('trades')
+                    .from('nasdaq_diary_trades')
                     .upsert([tradeData]);
                 if (error) throw error;
             } catch (supaErr) {
@@ -997,7 +997,7 @@ async function deleteTrade(id) {
             if (supabaseClient) {
                 try {
                     const { error } = await supabaseClient
-                        .from('trades')
+                        .from('nasdaq_diary_trades')
                         .delete()
                         .eq('id', id);
                     if (error) throw error;
