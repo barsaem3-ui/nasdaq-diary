@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
 
     <!-- PWA Settings (Installable App) -->
     <link rel="manifest" href="manifest.json">
@@ -239,21 +239,21 @@
                     <div class="form-row-two">
                         <div class="form-group">
                             <label for="trade-thought-signal"><i data-lucide="bell"></i> 기다리는 신호</label>
-                            <textarea id="trade-thought-signal" class="form-control" rows="2" placeholder="예: 5분봉 20선 돌파 지지 신호" required></textarea>
+                            <textarea id="trade-thought-signal" class="form-control" rows="2" placeholder="예: 5분봉 20선 돌파 지지 신호"></textarea>
                         </div>
                         <div class="form-group">
                             <label for="trade-thought-reason"><i data-lucide="alert-triangle"></i> 진입을 안하는 이유</label>
-                            <textarea id="trade-thought-reason" class="form-control" rows="2" placeholder="예: 전고점 저항 라인 바로 직전이라 손익비 불리함" required></textarea>
+                            <textarea id="trade-thought-reason" class="form-control" rows="2" placeholder="예: 전고점 저항 라인 바로 직전이라 손익비 불리함"></textarea>
                         </div>
                     </div>
                     <div class="form-row-two">
                         <div class="form-group">
                             <label for="trade-thought-tech"><i data-lucide="trending-up"></i> 기술적 시장분석과 비중</label>
-                            <textarea id="trade-thought-tech" class="form-control" rows="2" placeholder="예: 일봉 상승 추세 속 60분봉 눌림목 지지 (비중 1계약)" required></textarea>
+                            <textarea id="trade-thought-tech" class="form-control" rows="2" placeholder="예: 일봉 상승 추세 속 60분봉 눌림목 지지 (비중 1계약)"></textarea>
                         </div>
                         <div class="form-group">
                             <label for="trade-thought-psych"><i data-lucide="smile"></i> 심리적분석과 비중</label>
-                            <textarea id="trade-thought-psych" class="form-control" rows="2" placeholder="예: 어제 손실로 인한 뇌동 유혹 있음, 차분히 대기 (비중 10% 축소)" required></textarea>
+                            <textarea id="trade-thought-psych" class="form-control" rows="2" placeholder="예: 어제 손실로 인한 뇌동 유혹 있음, 차분히 대기 (비중 10% 축소)"></textarea>
                         </div>
                     </div>
                 </div>
@@ -351,7 +351,7 @@
                         <label for="trade-contracts"><i data-lucide="layers"></i> 계약수</label>
                         <div class="number-stepper">
                             <button type="button" class="step-btn minus" onclick="stepInput('trade-contracts', -1)">-</button>
-                            <input type="number" id="trade-contracts" class="form-control text-center" min="1" step="1" value="1" required>
+                            <input type="number" id="trade-contracts" class="form-control text-center" min="1" step="1" value="1">
                             <button type="button" class="step-btn plus" onclick="stepInput('trade-contracts', 1)">+</button>
                         </div>
                     </div>
@@ -359,7 +359,7 @@
                         <label for="trade-entry"><i data-lucide="log-in"></i> 진입포인트</label>
                         <div class="number-stepper">
                             <button type="button" class="step-btn minus" onclick="stepInput('trade-entry', -10)">-</button>
-                            <input type="number" id="trade-entry" class="form-control text-center" step="0.25" placeholder="18500.00" required>
+                            <input type="number" id="trade-entry" class="form-control text-center" step="0.25" placeholder="18500.00">
                             <button type="button" class="step-btn plus" onclick="stepInput('trade-entry', 10)">+</button>
                         </div>
                     </div>
@@ -367,7 +367,7 @@
                         <label for="trade-exit"><i data-lucide="log-out"></i> 청산포인트</label>
                         <div class="number-stepper">
                             <button type="button" class="step-btn minus" onclick="stepInput('trade-exit', -10)">-</button>
-                            <input type="number" id="trade-exit" class="form-control text-center" step="0.25" placeholder="18550.00" required>
+                            <input type="number" id="trade-exit" class="form-control text-center" step="0.25" placeholder="18550.00">
                             <button type="button" class="step-btn plus" onclick="stepInput('trade-exit', 10)">+</button>
                         </div>
                     </div>
@@ -408,11 +408,11 @@
                 <div class="form-row-two">
                     <div class="form-group">
                         <label for="entry-tech-reason"><i data-lucide="bar-chart-2"></i> 진입 기술적 사유 (근거 차트 분석)</label>
-                        <textarea id="entry-tech-reason" class="form-control" rows="3" placeholder="예: 5분봉 120이평선 지지 확인 및 이중 바닥 돌파 매수" required></textarea>
+                        <textarea id="entry-tech-reason" class="form-control" rows="3" placeholder="예: 5분봉 120이평선 지지 확인 및 이중 바닥 돌파 매수"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="entry-psych-reason"><i data-lucide="heart"></i> 진입 심리적 사유 (뇌동 방지 체크)</label>
-                        <textarea id="entry-psych-reason" class="form-control" rows="3" placeholder="예: 손실 이후 복수심에 흔들리지 않고 원칙 자리가 와서 조급함 없이 진입함" required></textarea>
+                        <textarea id="entry-psych-reason" class="form-control" rows="3" placeholder="예: 손실 이후 복수심에 흔들리지 않고 원칙 자리가 와서 조급함 없이 진입함"></textarea>
                     </div>
                 </div>
 
@@ -420,11 +420,11 @@
                 <div class="form-row-two">
                     <div class="form-group">
                         <label for="exit-tech-reason"><i data-lucide="target"></i> 청산 기술적 사유 (타겟 설정)</label>
-                        <textarea id="exit-tech-reason" class="form-control" rows="3" placeholder="예: 전고점 저항 라인 및 ATR 1.5배 목표 도달에 의한 완결" required></textarea>
+                        <textarea id="exit-tech-reason" class="form-control" rows="3" placeholder="예: 전고점 저항 라인 및 ATR 1.5배 목표 도달에 의한 완결"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="exit-psych-reason"><i data-lucide="smile"></i> 청산 심리적 사유 (원칙 준수)</label>
-                        <textarea id="exit-psych-reason" class="form-control" rows="3" placeholder="예: 더 오를 것 같은 욕심을 누르고 지정된 목표가에서 기계적으로 청산함" required></textarea>
+                        <textarea id="exit-psych-reason" class="form-control" rows="3" placeholder="예: 더 오를 것 같은 욕심을 누르고 지정된 목표가에서 기계적으로 청산함"></textarea>
                     </div>
                 </div>
 
@@ -522,6 +522,6 @@
     </div>
 
     <!-- Modular Script Injection -->
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>

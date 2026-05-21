@@ -774,6 +774,14 @@ body {
     background: var(--blue-gradient);
 }
 
+.trade-card.holding::before {
+    background: linear-gradient(90deg, #ffd700, #ffae00);
+}
+
+.trade-card.draft::before {
+    background: linear-gradient(90deg, #8f9cae, #5a6578);
+}
+
 .trade-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.6);
@@ -787,6 +795,16 @@ body {
 .trade-card.loss:hover {
     border-color: rgba(0, 122, 255, 0.4);
     box-shadow: 0 16px 40px 0 rgba(0, 122, 255, 0.15);
+}
+
+.trade-card.holding:hover {
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 16px 40px 0 rgba(255, 215, 0, 0.15);
+}
+
+.trade-card.draft:hover {
+    border-color: rgba(143, 156, 174, 0.4);
+    box-shadow: 0 16px 40px 0 rgba(143, 156, 174, 0.15);
 }
 
 .card-top {
@@ -939,6 +957,16 @@ body {
 .card-pnl-box.loss .val {
     color: var(--blue);
     text-shadow: 0 0 10px rgba(0, 122, 255, 0.3);
+}
+
+.card-pnl-box.holding .val {
+    color: #ffae00;
+    text-shadow: 0 0 10px rgba(255, 174, 0, 0.3);
+}
+
+.card-pnl-box.draft .val {
+    color: var(--text-muted);
+    text-shadow: none;
 }
 
 /* Thumbnails list - Compacted to 70% width, 70px height, minimized gaps */

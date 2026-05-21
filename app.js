@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '6.0';
+const APP_VERSION = '7.0';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -550,42 +550,42 @@ function calculatePnL(position, contracts, entryPoint, exitPoint) {
 function calculatePnLOnForm() {
     const position = document.querySelector('input[name="position"]:checked').value;
     const contracts = parseInt(elements.tradeContracts.value) || 1;
-    const entryPoint = parseFloat(elements.tradeEntry.value) || 0;
-    const exitPoint = parseFloat(elements.tradeExit.value) || 0;
     
-    // Render formula on the modal
-    if (position === 'BUY') {
-        elements.calcFormulaDisplay.innerHTML = `((${exitPoint.toFixed(2)} - ${entryPoint.toFixed(2)}) * ${contracts}) - (${contracts} * $4)`;
+    const entryVal = elements.tradeEntry.value.trim();
+    const exitVal = elements.tradeExit.value.trim();
+    
+    const entryPoint = entryVal !== '' ? parseFloat(entryVal) : 0;
+    const exitPoint = exitVal !== '' ? parseFloat(exitVal) : 0;
+    
+    const isHolding = entryPoint > 0 && (exitVal === '' || exitPoint === 0);
+    const isDraft = entryVal === '' || entryPoint === 0;
+    
+    if (isHolding) {
+        elements.calcFormulaDisplay.innerHTML = `진입가: ${entryPoint.toFixed(2)} | 청산 대기 중 (보유 포지션)`;
+        elements.modalCalcPnl.textContent = '보유 중 ⏳';
+        elements.modalCalcPnl.style.color = '#ffae00';
+    } else if (isDraft) {
+        elements.calcFormulaDisplay.innerHTML = `진입포인트 입력 대기 중 (메모 기록용)`;
+        elements.modalCalcPnl.textContent = '기록용 📝';
+        elements.modalCalcPnl.style.color = 'var(--text-muted)';
     } else {
-        elements.calcFormulaDisplay.innerHTML = `((${entryPoint.toFixed(2)} - ${exitPoint.toFixed(2)}) * ${contracts}) - (${contracts} * $4)`;
-    }
-    
-    const profitLoss = calculatePnL(position, contracts, entryPoint, exitPoint);
-    
-    elements.modalCalcPnl.textContent = formatCurrency(profitLoss);
-    elements.modalCalcPnl.className = '';
-    
-    if (profitLoss > 0) {
-        elements.modalCalcPnl.classList.add('danger-color'); // Profit represents crimson red
-    } else if (profitLoss < 0) {
-        elements.modalCalcPnl.classList.add('success-color'); // Wait, user wants: "0보다 작을경우 파란색으로, 클경우 붉은색으로 표시"
-        elements.modalCalcPnl.className = 'success-color'; // Wait, let's look at CSS variables:
-        // In style.css:
-        // --red is Red (Bullish/Profit)
-        // --blue is Blue (Bearish/Loss)
-        // Let's create an explicit class for color matching
-        elements.modalCalcPnl.style.color = 'var(--red)';
-    } else {
-        elements.modalCalcPnl.style.color = 'var(--text-primary)';
-    }
-    
-    // Let's set it cleanly:
-    if (profitLoss > 0) {
-        elements.modalCalcPnl.style.color = 'var(--red)';
-    } else if (profitLoss < 0) {
-        elements.modalCalcPnl.style.color = 'var(--blue)';
-    } else {
-        elements.modalCalcPnl.style.color = 'white';
+        // Render formula on the modal
+        if (position === 'BUY') {
+            elements.calcFormulaDisplay.innerHTML = `((${exitPoint.toFixed(2)} - ${entryPoint.toFixed(2)}) * ${contracts}) - (${contracts} * $4)`;
+        } else {
+            elements.calcFormulaDisplay.innerHTML = `((${entryPoint.toFixed(2)} - ${exitPoint.toFixed(2)}) * ${contracts}) - (${contracts} * $4)`;
+        }
+        
+        const profitLoss = calculatePnL(position, contracts, entryPoint, exitPoint);
+        elements.modalCalcPnl.textContent = formatCurrency(profitLoss);
+        
+        if (profitLoss > 0) {
+            elements.modalCalcPnl.style.color = 'var(--red)';
+        } else if (profitLoss < 0) {
+            elements.modalCalcPnl.style.color = 'var(--blue)';
+        } else {
+            elements.modalCalcPnl.style.color = 'white';
+        }
     }
 }
 
@@ -630,20 +630,27 @@ function updateDashboardStats() {
     });
     
     let totalPnl = 0;
-    let totalTrades = filteredTrades.length;
+    let totalTrades = 0;
     let totalContracts = 0;
     let wins = 0;
     let losses = 0;
     
     filteredTrades.forEach(trade => {
-        totalPnl += trade.profit_loss;
-        totalContracts += trade.contracts;
+        const isHolding = trade.entry_point > 0 && (!trade.exit_point || trade.exit_point === 0);
+        const isDraft = !trade.entry_point || trade.entry_point === 0;
         
-        const isWin = trade.profit_loss >= 0;
-        if (isWin) {
-            wins++;
-        } else {
-            losses++;
+        // Exclude active holding and draft/notes trades from performance statistics
+        if (!isHolding && !isDraft) {
+            totalPnl += trade.profit_loss;
+            totalContracts += trade.contracts;
+            totalTrades++;
+            
+            const isWin = trade.profit_loss >= 0;
+            if (isWin) {
+                wins++;
+            } else {
+                losses++;
+            }
         }
     });
     
@@ -729,10 +736,27 @@ function renderTradesGrid() {
     elements.emptyState.classList.add('hidden');
     
     filteredTrades.forEach(trade => {
-        const isWin = trade.profit_loss >= 0;
-        const cardClass = isWin ? 'win' : 'loss';
-        const formattedPnl = formatCurrency(trade.profit_loss);
-        const pnlColorStyle = isWin ? 'var(--red)' : 'var(--blue)';
+        const isHolding = trade.entry_point > 0 && (!trade.exit_point || trade.exit_point === 0);
+        const isDraft = !trade.entry_point || trade.entry_point === 0;
+        
+        let cardClass = '';
+        let formattedPnl = '';
+        let pnlColorStyle = '';
+        
+        if (isHolding) {
+            cardClass = 'holding';
+            formattedPnl = '보유 중 ⏳';
+            pnlColorStyle = '#ffae00';
+        } else if (isDraft) {
+            cardClass = 'draft';
+            formattedPnl = '기록용 📝';
+            pnlColorStyle = 'var(--text-muted)';
+        } else {
+            const isWin = trade.profit_loss >= 0;
+            cardClass = isWin ? 'win' : 'loss';
+            formattedPnl = formatCurrency(trade.profit_loss);
+            pnlColorStyle = isWin ? 'var(--red)' : 'var(--blue)';
+        }
         
         // Psychological State translation and Emoji
         const mindMeta = getMindMeta(trade.mind_tag);
@@ -786,11 +810,11 @@ function renderTradesGrid() {
                     </div>
                     <div class="metric-item">
                         <span class="lbl">진입가</span>
-                        <span class="val">${trade.entry_point.toFixed(2)}</span>
+                        <span class="val">${(trade.entry_point && trade.entry_point > 0) ? trade.entry_point.toFixed(2) : '-'}</span>
                     </div>
                     <div class="metric-item">
                         <span class="lbl">청산가</span>
-                        <span class="val">${trade.exit_point.toFixed(2)}</span>
+                        <span class="val">${(trade.exit_point && trade.exit_point > 0) ? trade.exit_point.toFixed(2) : '-'}</span>
                     </div>
                 </div>
                 
@@ -913,8 +937,8 @@ function openTradeModal(editingId = null) {
         
         // Core inputs
         elements.tradeContracts.value = trade.contracts;
-        elements.tradeEntry.value = trade.entry_point;
-        elements.tradeExit.value = trade.exit_point;
+        elements.tradeEntry.value = (trade.entry_point && trade.entry_point > 0) ? trade.entry_point : '';
+        elements.tradeExit.value = (trade.exit_point && trade.exit_point > 0) ? trade.exit_point : '';
         
         // Thoughts snap
         document.getElementById('trade-thought-signal').value = trade.thought_signal || '';
@@ -932,10 +956,10 @@ function openTradeModal(editingId = null) {
         if (trade.entry_image_url) displayPreview(trade.entry_image_url, 'entry');
         if (trade.exit_image_url) displayPreview(trade.exit_image_url, 'exit');
         
-        // Show thoughts section and make them required
+        // Show thoughts section but do not make them required
         if (modalThoughtsSection) modalThoughtsSection.style.display = 'block';
         thoughtInputs.forEach(input => {
-            if (input) input.setAttribute('required', '');
+            if (input) input.removeAttribute('required');
         });
         
     } else {
