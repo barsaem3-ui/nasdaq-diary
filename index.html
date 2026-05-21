@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나스닥100 매매일기장 by HyunKyu</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="stars-overlay"></div>
+    <div class="glow-container">
+        <div class="glow-orb red-glow"></div>
+        <div class="glow-orb gold-glow"></div>
+    </div>
+
+    <!-- App Wrapper -->
+    <div class="app-container">
+        
+        <div class="main-layout-wrapper">
+            <!-- Left Sidebar: Dashboard Stats (세로 방향 배치) -->
+            <aside class="sidebar-left">
+                <section class="dashboard-grid">
+                    
+                    <!-- Cumulative PnL -->
+                    <div class="dash-card pnl-card">
+                        <div class="dash-card-header">
+                            <span>누적 손익 (Net P&L)</span>
+                            <i data-lucide="trending-up" class="card-icon"></i>
+                        </div>
+                        <div class="dash-card-value" id="stat-total-pnl">$0.00</div>
+                        <div class="dash-card-sub">
+                            <span id="stat-pnl-label" class="badge">계약당 수수료 $4 반영됨</span>
+                        </div>
+                    </div>
+
+                    <!-- Win Rate -->
+                    <div class="dash-card winrate-card">
+                        <div class="dash-card-header">
+                            <span>승률 (Win Rate)</span>
+                            <i data-lucide="award" class="card-icon"></i>
+                        </div>
+                        <div class="dash-card-value" id="stat-win-rate">0%</div>
+                        <div class="dash-card-sub">
+                            <span class="progress-bar-container">
+                                <span class="progress-bar-fill" id="stat-winrate-bar" style="width: 0%"></span>
+                            </span>
+                            <span class="sub-text" id="stat-win-ratio">0승 / 0패</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Trades & Contracts -->
+                    <div class="dash-card stats-sub-card">
+                        <div class="dash-card-header">
+                            <span>매매 빈도 및 규모</span>
+                            <i data-lucide="activity" class="card-icon"></i>
+                        </div>
+                        <div class="dash-stats-row">
+                            <div class="dash-stat-item">
+                                <span class="label">총 매매 횟수</span>
+                                <span class="value" id="stat-total-trades">0회</span>
+                            </div>
+                            <div class="dash-stat-item">
+                                <span class="label">총 거래 계약수</span>
+                                <span class="value" id="stat-total-contracts">0계약</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Psychological Discipline Stats (심리 보완 획기적 지표) -->
+                    <div class="dash-card psychology-card">
+                        <div class="dash-card-header">
+                            <span>심리적 통제 지표 (Mind Control)</span>
+                            <i data-lucide="brain" class="card-icon"></i>
+                        </div>
+                        <div class="psychology-analysis">
+                            <div class="stat-winrate-by-mind">
+                                <span class="label">원칙 매매 승률:</span>
+                                <span class="value success-color" id="stat-mind-disciplined-winrate">-%</span>
+                            </div>
+                            <div class="stat-winrate-by-mind">
+                                <span class="label">감정 매매 승률:</span>
+                                <span class="value danger-color" id="stat-mind-emotional-winrate">-%</span>
+                            </div>
+                        </div>
+                        <div class="dash-card-sub text-center" id="stat-mind-suggestion">
+                            감정이 흔들릴 때 손실 확률이 극대화됩니다. 원칙 준수가 생명입니다!
+                        </div>
+                    </div>
+
+                </section>
+            </aside>
+
+            <!-- Right Main Content Area -->
+            <div class="main-content-area">
+                <!-- Header Section -->
+                <header class="app-header">
+                    <div class="header-logo">
+                        <div class="logo-icon">NQ</div>
+                        <div class="logo-text">
+                            <h1>NASDAQ 100</h1>
+                            <h2>매매일기장 <span class="author-badge">by HyunKyu</span></h2>
+                        </div>
+                    </div>
+                    <p class="header-motto">“뇌동매매를 극복하고 원칙을 수호하여 꿈을 현실로 만듭니다.”</p>
+                    <div class="header-actions">
+                        <button id="btn-settings" class="btn btn-secondary btn-icon" title="수파베이스 연동 설정">
+                            <i data-lucide="settings"></i>
+                            <span>설정</span>
+                        </button>
+                        <button id="btn-add-trade" class="btn btn-primary">
+                            <i data-lucide="plus-circle"></i>
+                            <span>새 일지 작성</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- 뇌동매매 방지용 실시간 생각 (제목 아래에 배치) -->
+                <section class="thoughts-panel glass-panel" id="thoughts-panel">
+                    <div class="thoughts-header">
+                        <div class="thoughts-title">
+                            <i data-lucide="brain-circuit" class="gold-icon"></i>
+                            <h3>뇌동매매 방지용 실시간 생각 <span class="accent-sub">(지금 너의 생각)</span></h3>
+                        </div>
+                    </div>
+                    <div class="thoughts-grid">
+                        <div class="thought-item">
+                            <label for="thought-signal"><i data-lucide="bell" class="gold-icon"></i> 기다리는 신호</label>
+                            <textarea id="thought-signal" class="form-control thought-input" rows="3" placeholder="기다리는 진입 신호나 가격 라인을 작성하세요..."></textarea>
+                        </div>
+                        <div class="thought-item">
+                            <label for="thought-reason"><i data-lucide="alert-triangle" class="gold-icon"></i> 진입을 안하는 이유</label>
+                            <textarea id="thought-reason" class="form-control thought-input" rows="3" placeholder="지금 섣부르게 뇌동매매로 들어가면 안 되는 근거를 명확히 하세요..."></textarea>
+                        </div>
+                        <div class="thought-item">
+                            <label for="thought-tech"><i data-lucide="trending-up" class="gold-icon"></i> 기술적 시장분석과 비중</label>
+                            <textarea id="thought-tech" class="form-control thought-input" rows="3" placeholder="차트 추세/저항 지지선 분석과 함께 설정할 비중을 적어주세요..."></textarea>
+                        </div>
+                        <div class="thought-item">
+                            <label for="thought-psych"><i data-lucide="smile" class="gold-icon"></i> 심리적분석과 비중</label>
+                            <textarea id="thought-psych" class="form-control thought-input" rows="3" placeholder="현재 심리 상태(탐욕, 분노 등) 자가 진단 및 허용할 위험 비중을 기록하세요..."></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Connection Status (Supabase 연동 상태 안내) -->
+                <div id="sync-status-bar" class="sync-status-bar offline">
+                    <span class="status-indicator"></span>
+                    <span class="status-text" id="sync-status-text">로컬 저장소 모드 (오프라인 작동 가능)</span>
+                    <button id="btn-sync-now" class="btn btn-sm btn-outline hidden">구름과 동기화</button>
+                </div>
+
+                <!-- Trade Cards Grid -->
+                <main class="trades-grid" id="trades-container">
+                    <!-- Dynamic trading cards inserted here by app.js -->
+                    <div class="empty-state" id="empty-state">
+                        <i data-lucide="file-text" class="empty-icon"></i>
+                        <h3>등록된 매매 일지가 없습니다.</h3>
+                        <p>상단의 '새 일지 작성' 버튼을 눌러 나스닥100 트레이딩 여정을 기록해 보세요!</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= MODAL WINDOWS ================= -->
+
+    <!-- 1. Add / Edit Trade Modal -->
+    <div id="modal-trade" class="modal-overlay">
+        <div class="modal-container glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-title">
+                    <i data-lucide="edit-3" class="gold-icon"></i>
+                    <span>새로운 매매기록 작성</span>
+                </h3>
+                <button class="modal-close" id="btn-close-trade-modal">&times;</button>
+            </div>
+            <form id="form-trade" class="modal-body">
+                <input type="hidden" id="trade-id">
+                
+                <!-- Thoughts Snapshot at Trade Time -->
+                <div class="modal-thoughts-section">
+                    <h4 class="section-title"><i data-lucide="brain-circuit" class="gold-icon"></i> 진입 직전 나의 생각 스냅샷 (뇌동 매매 강제 제어)</h4>
+                    <div class="form-row-two">
+                        <div class="form-group">
+                            <label for="trade-thought-signal"><i data-lucide="bell"></i> 기다리는 신호</label>
+                            <textarea id="trade-thought-signal" class="form-control" rows="2" placeholder="예: 5분봉 20선 돌파 지지 신호" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="trade-thought-reason"><i data-lucide="alert-triangle"></i> 진입을 안하는 이유</label>
+                            <textarea id="trade-thought-reason" class="form-control" rows="2" placeholder="예: 전고점 저항 라인 바로 직전이라 손익비 불리함" required></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row-two">
+                        <div class="form-group">
+                            <label for="trade-thought-tech"><i data-lucide="trending-up"></i> 기술적 시장분석과 비중</label>
+                            <textarea id="trade-thought-tech" class="form-control" rows="2" placeholder="예: 일봉 상승 추세 속 60분봉 눌림목 지지 (비중 1계약)" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="trade-thought-psych"><i data-lucide="smile"></i> 심리적분석과 비중</label>
+                            <textarea id="trade-thought-psych" class="form-control" rows="2" placeholder="예: 어제 손실로 인한 뇌동 유혹 있음, 차분히 대기 (비중 10% 축소)" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Image Upload / Paste Zones with dynamic edit actions -->
+                <div class="form-row-two image-sections">
+                    <!-- Entry Image Zone -->
+                    <div class="form-group image-upload-group">
+                        <div class="image-header">
+                            <label><i data-lucide="image"></i> 진입차트</label>
+                            <div class="image-actions">
+                                <button type="button" class="img-btn plus-btn" onclick="triggerFileInput('file-entry-img')" title="파일 올리기"><i data-lucide="plus"></i></button>
+                                <button type="button" class="img-btn minus-btn" onclick="toggleImageDeleteMode('entry')" title="이미지 비우기"><i data-lucide="minus"></i></button>
+                            </div>
+                        </div>
+                        <input type="file" id="file-entry-img" accept="image/*" class="hidden-file-input">
+                        <div class="image-dropzone" id="zone-entry-img" tabindex="0">
+                            <div class="zone-placeholder">
+                                <i data-lucide="clipboard-copy" class="placeholder-icon"></i>
+                                <p>파일 드래그 & 드롭 또는 여기를 누른 뒤 <span class="badge-shortcut">Ctrl+V</span>로 스크린샷 붙여넣기</p>
+                            </div>
+                            <div class="zone-preview hidden" id="preview-entry-container">
+                                <img src="" alt="진입 차트" id="preview-entry-img">
+                                <div class="delete-overlay hidden" id="overlay-entry-delete" onclick="clearZoneImage('entry')">
+                                    <div class="delete-circle"><i data-lucide="trash-2"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exit Image Zone -->
+                    <div class="form-group image-upload-group">
+                        <div class="image-header">
+                            <label><i data-lucide="image"></i> 청산차트</label>
+                            <div class="image-actions">
+                                <button type="button" class="img-btn plus-btn" onclick="triggerFileInput('file-exit-img')" title="파일 올리기"><i data-lucide="plus"></i></button>
+                                <button type="button" class="img-btn minus-btn" onclick="toggleImageDeleteMode('exit')" title="이미지 비우기"><i data-lucide="minus"></i></button>
+                            </div>
+                        </div>
+                        <input type="file" id="file-exit-img" accept="image/*" class="hidden-file-input">
+                        <div class="image-dropzone" id="zone-exit-img" tabindex="0">
+                            <div class="zone-placeholder">
+                                <i data-lucide="clipboard-copy" class="placeholder-icon"></i>
+                                <p>파일 드래그 & 드롭 또는 여기를 누른 뒤 <span class="badge-shortcut">Ctrl+V</span>로 스크린샷 붙여넣기</p>
+                            </div>
+                            <div class="zone-preview hidden" id="preview-exit-container">
+                                <img src="" alt="청산 차트" id="preview-exit-img">
+                                <div class="delete-overlay hidden" id="overlay-exit-delete" onclick="clearZoneImage('exit')">
+                                    <div class="delete-circle"><i data-lucide="trash-2"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date, Position, Conclusion Row -->
+                <div class="form-row-three">
+                    <div class="form-group">
+                        <label for="trade-date"><i data-lucide="calendar"></i> 일시</label>
+                        <input type="datetime-local" id="trade-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i data-lucide="activity"></i> 진입 포지션</label>
+                        <div class="position-toggle-container">
+                            <input type="radio" id="pos-buy" name="position" value="BUY" checked>
+                            <label for="pos-buy" class="pos-label buy-label">매수 (BUY)</label>
+                            
+                            <input type="radio" id="pos-sell" name="position" value="SELL">
+                            <label for="pos-sell" class="pos-label sell-label">매도 (SELL)</label>
+                            
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-conclusion"><i data-lucide="check-circle2"></i> 결론구분</label>
+                        <div class="conclusion-select-group">
+                            <input type="radio" id="concl-buy" name="conclusion" value="매수" checked>
+                            <label for="concl-buy">매수</label>
+                            
+                            <input type="radio" id="concl-buy-liq" name="conclusion" value="매수청산">
+                            <label for="concl-buy-liq">매수청산</label>
+                            
+                            <input type="radio" id="concl-sell" name="conclusion" value="매도">
+                            <label for="concl-sell">매도</label>
+                            
+                            <input type="radio" id="concl-sell-liq" name="conclusion" value="매도청산">
+                            <label for="concl-sell-liq">매도청산</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameters (Contracts, Entry, Exit) -->
+                <div class="form-row-three">
+                    <div class="form-group">
+                        <label for="trade-contracts"><i data-lucide="layers"></i> 계약수</label>
+                        <div class="number-stepper">
+                            <button type="button" class="step-btn minus" onclick="stepInput('trade-contracts', -1)">-</button>
+                            <input type="number" id="trade-contracts" class="form-control text-center" min="1" step="1" value="1" required>
+                            <button type="button" class="step-btn plus" onclick="stepInput('trade-contracts', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-entry"><i data-lucide="log-in"></i> 진입포인트</label>
+                        <div class="number-stepper">
+                            <button type="button" class="step-btn minus" onclick="stepInput('trade-entry', -10)">-</button>
+                            <input type="number" id="trade-entry" class="form-control text-center" step="0.25" placeholder="18500.00" required>
+                            <button type="button" class="step-btn plus" onclick="stepInput('trade-entry', 10)">+</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="trade-exit"><i data-lucide="log-out"></i> 청산포인트</label>
+                        <div class="number-stepper">
+                            <button type="button" class="step-btn minus" onclick="stepInput('trade-exit', -10)">-</button>
+                            <input type="number" id="trade-exit" class="form-control text-center" step="0.25" placeholder="18550.00" required>
+                            <button type="button" class="step-btn plus" onclick="stepInput('trade-exit', 10)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mental Tag Selection (뇌동매매 방지용) -->
+                <div class="form-group">
+                    <label><i data-lucide="brain"></i> 거래 시 나의 심리 태그 (단점 극복용 필수 체크)</label>
+                    <div class="mind-tag-grid">
+                        <input type="radio" id="mind-disciplined" name="mind_tag" value="disciplined" checked>
+                        <label for="mind-disciplined" class="mind-tag-label disciplined">
+                            <span class="emoji">😊</span> 평온 (원칙준수)
+                        </label>
+                        
+                        <input type="radio" id="mind-impatient" name="mind_tag" value="impatient">
+                        <label for="mind-impatient" class="mind-tag-label impatient">
+                            <span class="emoji">⚡</span> 조급함 (추격유혹)
+                        </label>
+
+                        <input type="radio" id="mind-revenge" name="mind_tag" value="revenge">
+                        <label for="mind-revenge" class="mind-tag-label revenge">
+                            <span class="emoji">😡</span> 분노 (복수매매)
+                        </label>
+
+                        <input type="radio" id="mind-fomo" name="mind_tag" value="fomo">
+                        <label for="mind-fomo" class="mind-tag-label fomo">
+                            <span class="emoji">🤑</span> 탐욕 (추격매수)
+                        </label>
+
+                        <input type="radio" id="mind-fear" name="mind_tag" value="fear">
+                        <label for="mind-fear" class="mind-tag-label fear">
+                            <span class="emoji">😨</span> 공포 (위축손절)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Entry Description (Tech / Psych) -->
+                <div class="form-row-two">
+                    <div class="form-group">
+                        <label for="entry-tech-reason"><i data-lucide="bar-chart-2"></i> 진입 기술적 사유 (근거 차트 분석)</label>
+                        <textarea id="entry-tech-reason" class="form-control" rows="3" placeholder="예: 5분봉 120이평선 지지 확인 및 이중 바닥 돌파 매수" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="entry-psych-reason"><i data-lucide="heart"></i> 진입 심리적 사유 (뇌동 방지 체크)</label>
+                        <textarea id="entry-psych-reason" class="form-control" rows="3" placeholder="예: 손실 이후 복수심에 흔들리지 않고 원칙 자리가 와서 조급함 없이 진입함" required></textarea>
+                    </div>
+                </div>
+
+                <!-- Exit Description (Tech / Psych) -->
+                <div class="form-row-two">
+                    <div class="form-group">
+                        <label for="exit-tech-reason"><i data-lucide="target"></i> 청산 기술적 사유 (타겟 설정)</label>
+                        <textarea id="exit-tech-reason" class="form-control" rows="3" placeholder="예: 전고점 저항 라인 및 ATR 1.5배 목표 도달에 의한 완결" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="exit-psych-reason"><i data-lucide="smile"></i> 청산 심리적 사유 (원칙 준수)</label>
+                        <textarea id="exit-psych-reason" class="form-control" rows="3" placeholder="예: 더 오를 것 같은 욕심을 누르고 지정된 목표가에서 기계적으로 청산함" required></textarea>
+                    </div>
+                </div>
+
+                <!-- Final Calculations Display inside modal -->
+                <div class="modal-calculator-bar">
+                    <div class="calc-formula">
+                        <span>예상 손익 수식:</span>
+                        <code id="calc-formula-display">((청산포인트 - 진입포인트) * 계약수) - (계약수 * $4)</code>
+                    </div>
+                    <div class="calc-result">
+                        <span>예상 결과:</span>
+                        <span id="modal-calc-pnl" class="neutral-color">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-trade">작성 취소</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-trade">매매기록 저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Supabase Integration Settings Modal -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal-container modal-sm glass-panel">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="database" class="gold-icon"></i>
+                    <span>클라우드 연동 (Supabase)</span>
+                </h3>
+                <button class="modal-close" id="btn-close-settings-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="settings-desc">
+                    수파베이스(Supabase)를 통해 PC, 모바일, 태블릿 간 데이터를 무중단 실시간 동기화하세요. 정보는 로컬 브라우저에도 암호화 백업 저장됩니다.
+                </p>
+                <div class="form-group">
+                    <label for="settings-url">Supabase Project URL</label>
+                    <input type="url" id="settings-url" class="form-control" placeholder="https://xxxxxx.supabase.co">
+                </div>
+                <div class="form-group">
+                    <label for="settings-key">Supabase Anon API Key</label>
+                    <input type="password" id="settings-key" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="settings-sync" checked>
+                    <label for="settings-sync">연동 즉시 로컬 데이터 업로드 및 동기화 진행</label>
+                </div>
+                
+                <div class="sql-help-box">
+                    <div class="sql-box-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong>💡 수파베이스 테이블 생성 SQL</strong>
+                        <button type="button" class="btn-text" id="btn-copy-sql" onclick="copySQLScript()" style="font-size: 0.75rem;">SQL 복사하기</button>
+                    </div>
+                    <pre class="sql-code-snippet" style="background: rgba(0,0,0,0.5); padding: 0.6rem; border-radius: 6px; overflow-x: auto; max-height: 120px; font-family: monospace; font-size: 0.7rem; color: #8F9CAE; margin: 0;"><code id="sql-code-text">create table trades (
+  id uuid primary key,
+  trade_date timestamp with time zone not null,
+  position text not null,
+  conclusion text not null,
+  contracts integer not null default 1,
+  entry_point numeric not null,
+  exit_point numeric not null,
+  thought_signal text,
+  thought_reason text,
+  thought_tech text,
+  thought_psych text,
+  entry_tech_reason text,
+  entry_psych_reason text,
+  exit_tech_reason text,
+  exit_psych_reason text,
+  entry_image_url text,
+  exit_image_url text,
+  mind_tag text not null default 'disciplined',
+  profit_loss numeric not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);</code></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-disconnect-supabase">연동 해제</button>
+                <button class="btn btn-primary" id="btn-save-settings">설정 저장 및 연결</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Full Screen Image Lightbox Modal -->
+    <div id="modal-lightbox" class="lightbox-overlay">
+        <span class="lightbox-close" id="btn-close-lightbox">&times;</span>
+        <div class="lightbox-content-container">
+            <img class="lightbox-image" id="lightbox-img" src="" alt="확대 보기">
+            <div class="lightbox-caption" id="lightbox-caption">진입/청산 차트 고해상도 복기 뷰</div>
+        </div>
+    </div>
+
+    <!-- Modular Script Injection -->
+    <script src="app.js"></script>
+</body>
+</html>
