@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '7.2';
+const APP_VERSION = '7.3';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -60,6 +60,7 @@ let db = null;
 let supabaseClient = null;
 let tradesList = [];
 let activePeriod = 'ALL'; // PnL Calculation Period: ALL, MONTH, WEEK, DAY
+let activeSupabaseTable = 'nasdaq_diary_trades'; // Dynamic fallback table
 
 // Image editing temp states
 let imageDeleteModes = {
@@ -277,12 +278,31 @@ async function syncDataWithCloud() {
     elements.btnSyncNow.classList.add('hidden');
     
     try {
-        // 1. Fetch cloud trades
-        const { data: cloudTrades, error } = await supabaseClient
-            .from('nasdaq_diary_trades')
-            .select('*');
-            
-        if (error) throw error;
+        // 1. Fetch cloud trades with automatic fallback table name check
+        let cloudTrades = [];
+        
+        try {
+            const { data, error } = await supabaseClient
+                .from('nasdaq_diary_trades')
+                .select('*');
+            if (error) throw error;
+            cloudTrades = data;
+            activeSupabaseTable = 'nasdaq_diary_trades';
+        } catch (err) {
+            console.warn('nasdaq_diary_trades 테이블 조회 실패, trades 테이블 시도...', err);
+            // Fallback to 'trades' table
+            try {
+                const { data, error } = await supabaseClient
+                    .from('trades')
+                    .select('*');
+                if (error) throw error;
+                cloudTrades = data;
+                activeSupabaseTable = 'trades';
+                console.log('trades 테이블에서 데이터를 성공적으로 불러왔습니다.');
+            } catch (errFallback) {
+                throw new Error(`테이블이 존재하지 않거나 액세스 권한이 없습니다. (nasdaq_diary_trades 및 trades 모두 실패: ${errFallback.message})`);
+            }
+        }
         
         // 2. Insert missing local trades to cloud
         const localIds = new Set(tradesList.map(t => t.id));
@@ -296,7 +316,7 @@ async function syncDataWithCloud() {
             delete cloudPayload._dirty; // Internal sync flags if any
             
             const { error: uploadError } = await supabaseClient
-                .from('nasdaq_diary_trades')
+                .from(activeSupabaseTable)
                 .upsert([cloudPayload]);
                 
             if (uploadError) console.error('Cloud 업로드 누락 에러:', uploadError);
@@ -329,7 +349,7 @@ async function syncDataWithCloud() {
     } catch (err) {
         console.error('동기화 실패:', err);
         elements.syncStatusBar.className = 'sync-status-bar error';
-        elements.syncStatusText.textContent = `클라우드 동기화 실패: ${err.message}. 테이블 생성을 확인하세요.`;
+        elements.syncStatusText.textContent = `클라우드 동기화 실패: ${err.message}`;
         elements.btnSyncNow.classList.remove('hidden');
     }
 }
@@ -1074,7 +1094,7 @@ async function handleTradeFormSubmit(e) {
         if (supabaseClient) {
             try {
                 const { error } = await supabaseClient
-                    .from('nasdaq_diary_trades')
+                    .from(activeSupabaseTable)
                     .upsert([tradeData]);
                 if (error) throw error;
             } catch (supaErr) {
@@ -1118,7 +1138,7 @@ async function deleteTrade(id) {
             if (supabaseClient) {
                 try {
                     const { error } = await supabaseClient
-                        .from('nasdaq_diary_trades')
+                        .from(activeSupabaseTable)
                         .delete()
                         .eq('id', id);
                     if (error) throw error;
