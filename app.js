@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '4.0';
+const APP_VERSION = '5.0';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -57,6 +57,16 @@ const elements = {
     // Header
     btnSettings: document.getElementById('btn-settings'),
     btnAddTrade: document.getElementById('btn-add-trade'),
+    btnLogout: document.getElementById('btn-logout'),
+    
+    // Login Screen
+    loginContainer: document.getElementById('login-container'),
+    appContainer: document.querySelector('.app-container'),
+    formLogin: document.getElementById('form-login'),
+    loginEmail: document.getElementById('login-email'),
+    loginPassword: document.getElementById('login-password'),
+    loginErrorMsg: document.getElementById('login-error-msg'),
+    btnTogglePassword: document.getElementById('btn-toggle-password'),
     
     // Stats Dashboard
     statTotalPnl: document.getElementById('stat-total-pnl'),
@@ -1181,6 +1191,14 @@ function bindEventListeners() {
     elements.btnSettings.addEventListener('click', openSettingsModal);
     elements.btnAddTrade.addEventListener('click', () => openTradeModal());
     
+    // Logout Button
+    if (elements.btnLogout) {
+        elements.btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('isLoggedIn');
+            window.location.reload(true);
+        });
+    }
+    
     // Filters
     if (elements.filterPosition) elements.filterPosition.addEventListener('change', renderTradesGrid);
     if (elements.filterResult) elements.filterResult.addEventListener('change', renderTradesGrid);
@@ -1259,5 +1277,85 @@ function copySQLScript() {
 }
 window.copySQLScript = copySQLScript;
 
-// Start application when DOM is ready
-document.addEventListener('DOMContentLoaded', applicationBootstrap);
+// ==========================================================================
+// 11. Security Authentication & Session Persistence
+// ==========================================================================
+function checkLoginState() {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    
+    if (isLoggedIn) {
+        // Hide login and show app container
+        if (elements.loginContainer) elements.loginContainer.classList.add('hidden');
+        if (elements.appContainer) elements.appContainer.classList.remove('hidden');
+        
+        // Bootstrap the application
+        applicationBootstrap();
+    } else {
+        // Show login and hide app container
+        if (elements.loginContainer) elements.loginContainer.classList.remove('hidden');
+        if (elements.appContainer) elements.appContainer.classList.add('hidden');
+        
+        // Activate Lucide icons for login screen
+        lucide.createIcons();
+        
+        // Bind login-specific listeners
+        setupLoginListeners();
+    }
+}
+
+function setupLoginListeners() {
+    // Toggle Password Visibility
+    if (elements.btnTogglePassword && elements.loginPassword) {
+        elements.btnTogglePassword.addEventListener('click', () => {
+            const type = elements.loginPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            elements.loginPassword.setAttribute('type', type);
+            
+            // Toggle eye icon
+            const icon = elements.btnTogglePassword.querySelector('i');
+            if (icon) {
+                const currentIcon = icon.getAttribute('data-lucide');
+                const newIcon = currentIcon === 'eye' ? 'eye-off' : 'eye';
+                icon.setAttribute('data-lucide', newIcon);
+                lucide.createIcons();
+            }
+        });
+    }
+    
+    // Form Submit Authentication
+    if (elements.formLogin) {
+        elements.formLogin.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = elements.loginEmail ? elements.loginEmail.value.trim() : '';
+            const password = elements.loginPassword ? elements.loginPassword.value.trim() : '';
+            
+            if (email === 'barsaem3@gmail.com' && password === 'guswjd71') {
+                // Successful Login
+                localStorage.setItem('isLoggedIn', 'true');
+                
+                // Visual transition
+                if (elements.loginContainer) elements.loginContainer.classList.add('hidden');
+                if (elements.appContainer) elements.appContainer.classList.remove('hidden');
+                
+                // Bootstrap full app
+                applicationBootstrap();
+            } else {
+                // Failed Login
+                if (elements.loginErrorMsg) {
+                    elements.loginErrorMsg.classList.remove('hidden');
+                    // Reset CSS animation to shake again
+                    elements.loginErrorMsg.style.animation = 'none';
+                    elements.loginErrorMsg.offsetHeight; // trigger reflow
+                    elements.loginErrorMsg.style.animation = null;
+                }
+                if (elements.loginPassword) {
+                    elements.loginPassword.value = '';
+                    elements.loginPassword.focus();
+                }
+            }
+        });
+    }
+}
+
+// Start application validation when DOM is ready
+document.addEventListener('DOMContentLoaded', checkLoginState);

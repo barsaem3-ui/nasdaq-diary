@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
 
     <!-- PWA Settings (Installable App) -->
     <link rel="manifest" href="manifest.json">
@@ -28,8 +28,48 @@
         <div class="glow-orb gold-glow"></div>
     </div>
 
+    <!-- Login Wrapper (Premium 3D Glassmorphic design) -->
+    <div id="login-container" class="login-container hidden">
+        <div class="login-card glass-panel">
+            <div class="login-logo">
+                <div class="login-logo-icon">NQ</div>
+                <h2>NASDAQ 100</h2>
+                <p>PREMIUM TRADING DIARY</p>
+            </div>
+            
+            <form id="form-login" class="login-form">
+                <div class="form-group">
+                    <label for="login-email"><i data-lucide="mail" class="gold-icon"></i> 이메일 아이디</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="barsaem3@gmail.com" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="login-password"><i data-lucide="lock" class="gold-icon"></i> 비밀번호</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="login-password" class="form-control" placeholder="비밀번호 입력" required autocomplete="current-password">
+                        <button type="button" id="btn-toggle-password" class="btn-toggle-password">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="login-error-msg hidden" id="login-error-msg">
+                    ⚠️ 이메일 또는 비밀번호가 일치하지 않습니다.
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block btn-login">
+                    <i data-lucide="log-in"></i>
+                    <span>로그인 수호하기</span>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>“원칙이 서야 계좌가 산다.”</p>
+            </div>
+        </div>
+    </div>
+
     <!-- App Wrapper -->
-    <div class="app-container">
+    <div class="app-container hidden">
         
         <div class="main-layout-wrapper">
             <!-- Left Sidebar: Dashboard Stats (세로 방향 배치) -->
@@ -118,6 +158,10 @@
                             <i data-lucide="settings"></i>
                             <span>설정</span>
                         </button>
+                        <button id="btn-logout" class="btn btn-secondary btn-icon" title="로그아웃">
+                            <i data-lucide="log-out"></i>
+                            <span>로그아웃</span>
+                        </button>
                         <button id="btn-add-trade" class="btn btn-primary">
                             <i data-lucide="plus-circle"></i>
                             <span>새 일지 작성</span>
@@ -136,19 +180,19 @@
                     <div class="thoughts-grid">
                         <div class="thought-item">
                             <label for="thought-signal"><i data-lucide="bell" class="gold-icon"></i> 기다리는 신호</label>
-                            <textarea id="thought-signal" class="form-control thought-input" rows="3" placeholder="기다리는 진입 신호나 가격 라인을 작성하세요..."></textarea>
+                            <textarea id="thought-signal" class="form-control thought-input" rows="2" placeholder="기다리는 진입 신호나 가격 라인을 작성하세요..."></textarea>
                         </div>
                         <div class="thought-item">
                             <label for="thought-reason"><i data-lucide="alert-triangle" class="gold-icon"></i> 진입을 안하는 이유</label>
-                            <textarea id="thought-reason" class="form-control thought-input" rows="3" placeholder="지금 섣부르게 뇌동매매로 들어가면 안 되는 근거를 명확히 하세요..."></textarea>
+                            <textarea id="thought-reason" class="form-control thought-input" rows="2" placeholder="지금 섣부르게 뇌동매매로 들어가면 안 되는 근거를 명확히 하세요..."></textarea>
                         </div>
                         <div class="thought-item">
                             <label for="thought-tech"><i data-lucide="trending-up" class="gold-icon"></i> 기술적 시장분석과 비중</label>
-                            <textarea id="thought-tech" class="form-control thought-input" rows="3" placeholder="차트 추세/저항 지지선 분석과 함께 설정할 비중을 적어주세요..."></textarea>
+                            <textarea id="thought-tech" class="form-control thought-input" rows="2" placeholder="차트 추세/저항 지지선 분석과 함께 설정할 비중을 적어주세요..."></textarea>
                         </div>
                         <div class="thought-item">
                             <label for="thought-psych"><i data-lucide="smile" class="gold-icon"></i> 심리적분석과 비중</label>
-                            <textarea id="thought-psych" class="form-control thought-input" rows="3" placeholder="현재 심리 상태(탐욕, 분노 등) 자가 진단 및 허용할 위험 비중을 기록하세요..."></textarea>
+                            <textarea id="thought-psych" class="form-control thought-input" rows="2" placeholder="현재 심리 상태(탐욕, 분노 등) 자가 진단 및 허용할 위험 비중을 기록하세요..."></textarea>
                         </div>
                     </div>
                 </section>
@@ -478,6 +522,6 @@
     </div>
 
     <!-- Modular Script Injection -->
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>
