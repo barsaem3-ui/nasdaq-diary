@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=7.1">
+    <link rel="stylesheet" href="style.css?v=7.2">
 
     <!-- PWA Settings (Installable App) -->
     <link rel="manifest" href="manifest.json">
@@ -481,7 +481,7 @@
                         <strong>💡 수파베이스 테이블 생성 SQL</strong>
                         <button type="button" class="btn-text" id="btn-copy-sql" onclick="copySQLScript()" style="font-size: 0.75rem;">SQL 복사하기</button>
                     </div>
-                    <pre class="sql-code-snippet" style="background: rgba(0,0,0,0.5); padding: 0.6rem; border-radius: 6px; overflow-x: auto; max-height: 120px; font-family: monospace; font-size: 0.7rem; color: #8F9CAE; margin: 0;"><code id="sql-code-text">create table trades (
+                    <pre class="sql-code-snippet" style="background: rgba(0,0,0,0.5); padding: 0.6rem; border-radius: 6px; overflow-x: auto; max-height: 120px; font-family: monospace; font-size: 0.7rem; color: #8F9CAE; margin: 0;"><code id="sql-code-text">create table nasdaq_diary_trades (
   id uuid primary key,
   trade_date timestamp with time zone not null,
   position text not null,
@@ -522,6 +522,6 @@
     </div>
 
     <!-- Modular Script Injection -->
-    <script src="app.js?v=7.1"></script>
+    <script src="app.js?v=7.2"></script>
 </body>
 </html>

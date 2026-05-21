@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '7.1';
+const APP_VERSION = '7.2';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -32,7 +32,24 @@ if (localStorage.getItem('app_version') !== APP_VERSION) {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered successfully.', reg.scope))
+            .then(reg => {
+                console.log('Service Worker registered successfully.', reg.scope);
+                
+                // Monitor for updates and hard-reload to activate immediately
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    if (installingWorker) {
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('Newer Service Worker version detected, triggering reload...');
+                                    window.location.reload(true);
+                                }
+                            }
+                        };
+                    }
+                };
+            })
             .catch(err => console.error('Service Worker registration failed:', err));
     });
 }
@@ -245,7 +262,7 @@ function initSupabase() {
         }
     } else {
         elements.syncStatusBar.className = 'sync-status-bar offline';
-        elements.syncStatusText.textContent = '로컬 브라우저 보안 저장 모드 (오프라인 작동 가능)';
+        elements.syncStatusText.textContent = '로컬 보안 저장 모드 (다른 기기와 데이터 연동은 우측 상단 [설정] 클릭 💡)';
         elements.btnSyncNow.classList.add('hidden');
     }
     supabaseClient = null;
@@ -728,6 +745,17 @@ function renderTradesGrid() {
     elements.tradesContainer.innerHTML = '';
     
     if (filteredTrades.length === 0) {
+        if (!supabaseClient) {
+            elements.emptyState.querySelector('p').innerHTML = `
+                상단의 '새 일지 작성' 버튼을 눌러 매매 여정을 기록해 보세요!<br><br>
+                🏠 <strong>집이나 다른 기기에서 접속하셨나요?</strong><br>
+                우측 상단 <strong>[설정]</strong> 버튼을 누르고 기존의 <strong>수파베이스(Supabase) 클라우드 연동</strong>을 진행하시면 회사에서 작성한 모든 매매 기록이 실시간으로 동기화되어 즉시 나타납니다!
+            `;
+        } else {
+            elements.emptyState.querySelector('p').innerHTML = `
+                상단의 '새 일지 작성' 버튼을 눌러 나스닥100 트레이딩 여정을 기록해 보세요!
+            `;
+        }
         elements.tradesContainer.appendChild(elements.emptyState);
         elements.emptyState.classList.remove('hidden');
         return;
