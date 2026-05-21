@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nasdaq-diary-v7.3';
+const CACHE_NAME = 'nasdaq-diary-v7.5';
 const ASSETS = [
   './',
   './index.html',

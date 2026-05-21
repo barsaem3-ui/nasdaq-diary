@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '7.3';
+const APP_VERSION = '7.5';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -278,29 +278,42 @@ async function syncDataWithCloud() {
     elements.btnSyncNow.classList.add('hidden');
     
     try {
-        // 1. Fetch cloud trades with automatic fallback table name check
+        // 1. Fetch cloud trades with automatic fallback table name check (both existence and row counts)
         let cloudTrades = [];
+        let fetchedFromDiary = false;
         
         try {
             const { data, error } = await supabaseClient
                 .from('nasdaq_diary_trades')
                 .select('*');
             if (error) throw error;
-            cloudTrades = data;
+            cloudTrades = data || [];
             activeSupabaseTable = 'nasdaq_diary_trades';
+            fetchedFromDiary = true;
         } catch (err) {
-            console.warn('nasdaq_diary_trades 테이블 조회 실패, trades 테이블 시도...', err);
-            // Fallback to 'trades' table
+            console.warn('nasdaq_diary_trades 테이블 조회 실패:', err);
+        }
+        
+        // If diary query failed, OR it succeeded but returned 0 rows, check trades table
+        if (!fetchedFromDiary || cloudTrades.length === 0) {
             try {
                 const { data, error } = await supabaseClient
                     .from('trades')
                     .select('*');
-                if (error) throw error;
-                cloudTrades = data;
-                activeSupabaseTable = 'trades';
-                console.log('trades 테이블에서 데이터를 성공적으로 불러왔습니다.');
+                if (!error && data && data.length > 0) {
+                    cloudTrades = data;
+                    activeSupabaseTable = 'trades';
+                    console.log('trades 테이블에서 데이터 감지됨 (우선 적용).');
+                } else if (!fetchedFromDiary) {
+                    if (error) throw error;
+                    cloudTrades = data || [];
+                    activeSupabaseTable = 'trades';
+                }
             } catch (errFallback) {
-                throw new Error(`테이블이 존재하지 않거나 액세스 권한이 없습니다. (nasdaq_diary_trades 및 trades 모두 실패: ${errFallback.message})`);
+                if (!fetchedFromDiary) {
+                    throw new Error(`테이블 조회 실패: nasdaq_diary_trades 및 trades 모두 실패했습니다. (${errFallback.message})`);
+                }
+                console.log('trades 테이블 조회 실패. 빈 nasdaq_diary_trades 테이블을 유지합니다.');
             }
         }
         
@@ -349,7 +362,7 @@ async function syncDataWithCloud() {
     } catch (err) {
         console.error('동기화 실패:', err);
         elements.syncStatusBar.className = 'sync-status-bar error';
-        elements.syncStatusText.textContent = `클라우드 동기화 실패: ${err.message}`;
+        elements.syncStatusText.innerHTML = `클라우드 동기화 실패: ${err.message} <a href="#" onclick="openDiagnosticsFromStatusBar(event)" style="color: var(--gold-bright); text-decoration: underline; margin-left: 10px; font-weight: 600;">🔍 원인 분석 및 자가 진단</a>`;
         elements.btnSyncNow.classList.remove('hidden');
     }
 }
@@ -1201,6 +1214,194 @@ function disconnectSupabase() {
     }
 }
 
+async function runSupabaseDiagnostics() {
+    const resultsContainer = document.getElementById('diagnostic-results');
+    if (!resultsContainer) return;
+    resultsContainer.style.display = 'block';
+    resultsContainer.textContent = '진단 중... ⏳';
+    resultsContainer.style.color = '#8F9CAE';
+    
+    const url = document.getElementById('settings-url').value.trim();
+    const key = document.getElementById('settings-key').value.trim();
+    
+    if (!url || !key) {
+        resultsContainer.textContent = '❌ 오류: URL 또는 API Key가 입력되지 않았습니다. 입력을 먼저 진행해 주세요.';
+        resultsContainer.style.color = 'var(--blue)';
+        return;
+    }
+    
+    let report = [];
+    report.push(`[1] Supabase Client 생성 시도...`);
+    
+    let tempClient = null;
+    try {
+        tempClient = supabase.createClient(url, key);
+        report.push(`✅ Client 생성 성공!`);
+    } catch (e) {
+        report.push(`❌ Client 생성 실패: ${e.message}`);
+        resultsContainer.textContent = report.join('\n');
+        resultsContainer.style.color = 'var(--blue)';
+        return;
+    }
+    
+    report.push(`\n[2] 테이블 및 데이터베이스 연결성 진단...`);
+    
+    // Test nasdaq_diary_trades
+    let testDiaryTradesOk = false;
+    let diaryCount = 0;
+    try {
+        const { error, count } = await tempClient
+            .from('nasdaq_diary_trades')
+            .select('*', { count: 'exact', head: true });
+        if (error) throw error;
+        testDiaryTradesOk = true;
+        diaryCount = count || 0;
+        report.push(`✅ 'nasdaq_diary_trades' 테이블: 존재함 (행 개수: ${diaryCount}개)`);
+    } catch (e) {
+        report.push(`⚠️ 'nasdaq_diary_trades' 테이블 조회 실패: ${e.message}`);
+    }
+    
+    // Test trades
+    let testTradesOk = false;
+    let tradesCount = 0;
+    try {
+        const { error, count } = await tempClient
+            .from('trades')
+            .select('*', { count: 'exact', head: true });
+        if (error) throw error;
+        testTradesOk = true;
+        tradesCount = count || 0;
+        report.push(`✅ 'trades' 테이블: 존재함 (행 개수: ${tradesCount}개)`);
+    } catch (e) {
+        report.push(`⚠️ 'trades' 테이블 조회 실패: ${e.message}`);
+    }
+    
+    report.push(`\n[3] 최종 상태 진단 결과:`);
+    if (testDiaryTradesOk || testTradesOk) {
+        resultsContainer.style.color = '#4CD964';
+        const bestTable = testTradesOk && tradesCount >= diaryCount ? 'trades' : 'nasdaq_diary_trades';
+        const bestCount = bestTable === 'trades' ? tradesCount : diaryCount;
+        
+        report.push(`🎉 연결 성공! 활성 데이터 테이블은 [${bestTable}] 입니다.`);
+        report.push(`📊 저장된 데이터 개수: ${bestCount}개`);
+        
+        if (bestCount === 0) {
+            report.push(`⚠️ 주의: 연결은 정상이나 테이블에 데이터가 0개입니다.\n\n🏠 혹시 집에서 '새로운 수파베이스 프로젝트'를 따로 생성해 연동하셨나요?\n회사 컴퓨터와 데이터가 동기화되려면 회사에서 사용하신 '동일한 Supabase Project URL 및 API Key'를 그대로 복사해 입력하셔야 합니다.`);
+            resultsContainer.style.color = '#ffae00';
+        } else {
+            report.push(`👉 [설정 저장 및 연결]을 클릭하시면 이 데이터를 즉시 동기화하여 불러옵니다.`);
+        }
+    } else {
+        resultsContainer.style.color = 'var(--blue)';
+        report.push(`❌ 연결 실패: 테이블을 전혀 찾을 수 없거나 데이터베이스 접근 권한(Anon Key 혹은 RLS) 정책 문제일 수 있습니다.`);
+        report.push(`💡 도움말: 수파베이스 대시보드의 SQL Editor에 테이블 생성 쿼리를 실행했는지 다시 확인해 주세요.`);
+    }
+    
+    resultsContainer.textContent = report.join('\n');
+}
+window.runSupabaseDiagnostics = runSupabaseDiagnostics;
+
+// ==========================================================================
+// 8.1 Easy Connection Syncing & Clickable Self-Diagnosis (Version 7.5 Addition)
+// ==========================================================================
+function generateShareLink() {
+    const url = localStorage.getItem('supabase_url') || document.getElementById('settings-url').value.trim();
+    const key = localStorage.getItem('supabase_key') || document.getElementById('settings-key').value.trim();
+    
+    if (!url || !key) {
+        alert('연동 설정이 완료된 상태에서만 링크를 생성할 수 있습니다. URL과 API Key를 입력하고 설정 저장 후 시도해 주세요.');
+        return;
+    }
+    
+    const config = { url, key };
+    try {
+        const jsonStr = JSON.stringify(config);
+        const encoded = btoa(jsonStr);
+        // Build the full URL
+        const shareUrl = `${window.location.origin}${window.location.pathname}#config=${encoded}`;
+        
+        const input = document.getElementById('share-link-input');
+        const copyBtn = document.getElementById('btn-copy-share-link');
+        
+        if (input && copyBtn) {
+            input.style.display = 'block';
+            input.value = shareUrl;
+            copyBtn.style.display = 'block';
+            input.select();
+        }
+    } catch (e) {
+        alert('링크 생성 도중 에러가 발생했습니다: ' + e.message);
+    }
+}
+window.generateShareLink = generateShareLink;
+
+function copyShareLink() {
+    const input = document.getElementById('share-link-input');
+    if (!input || !input.value) return;
+    
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = document.getElementById('btn-copy-share-link');
+        if (btn) {
+            const originalText = btn.textContent;
+            btn.textContent = '복사 완료!';
+            btn.style.backgroundColor = '#4CD964';
+            btn.style.borderColor = '#4CD964';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.backgroundColor = '';
+                btn.style.borderColor = '';
+            }, 2000);
+        }
+    }).catch(err => {
+        alert('복사에 실패했습니다: ' + err);
+    });
+}
+window.copyShareLink = copyShareLink;
+
+function checkConfigHash() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#config=')) {
+        try {
+            const encoded = hash.substring(8);
+            const decoded = atob(encoded);
+            const config = JSON.parse(decoded);
+            
+            if (config.url && config.key) {
+                localStorage.setItem('supabase_url', config.url);
+                localStorage.setItem('supabase_key', config.key);
+                
+                alert('🎉 회사 컴퓨터의 수파베이스 연동 설정이 성공적으로 감지 및 반영되었습니다!\n\n저장 버튼을 따로 누르지 않아도 즉시 데이터를 클라우드와 동기화합니다.');
+                
+                // Clean the hash from the address bar to keep it tidy
+                window.history.replaceState(null, document.title, window.location.pathname);
+            }
+        } catch (e) {
+            console.error('URL 설정 동기화 파싱 에러:', e);
+        }
+    }
+}
+
+function openDiagnosticsFromStatusBar(event) {
+    if (event) event.preventDefault();
+    openSettingsModal();
+    
+    // Smooth scroll to diagnostic box or highlight it
+    const diagBox = document.getElementById('diagnostic-box');
+    if (diagBox) {
+        diagBox.scrollIntoView({ behavior: 'smooth' });
+        diagBox.style.outline = '2px solid var(--gold-bright)';
+        diagBox.style.borderRadius = '8px';
+        setTimeout(() => {
+            diagBox.style.outline = 'none';
+        }, 3000);
+    }
+    // Automatically trigger diagnostics
+    setTimeout(() => {
+        runSupabaseDiagnostics();
+    }, 400);
+}
+window.openDiagnosticsFromStatusBar = openDiagnosticsFromStatusBar;
+
 // ==========================================================================
 // 9. Real-time Thoughts Management ("지금 너의 생각")
 // ==========================================================================
@@ -1390,6 +1591,9 @@ window.copySQLScript = copySQLScript;
 // 11. Security Authentication & Session Persistence
 // ==========================================================================
 function checkLoginState() {
+    // Check URL configuration hash first
+    checkConfigHash();
+    
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     
     if (isLoggedIn) {

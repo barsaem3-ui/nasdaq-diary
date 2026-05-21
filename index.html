@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=7.3">
+    <link rel="stylesheet" href="style.css?v=7.5">
 
     <!-- PWA Settings (Installable App) -->
     <link rel="manifest" href="manifest.json">
@@ -504,6 +504,29 @@
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );</code></pre>
                 </div>
+
+                <!-- 정밀 진단 도구 -->
+                <div class="diagnostic-box" id="diagnostic-box" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--gold-bright); font-size: 0.8rem;">🔍 수파베이스 연결 정밀 진단</strong>
+                        <button type="button" class="btn-text" id="btn-run-diagnostics" onclick="runSupabaseDiagnostics()" style="font-size: 0.75rem; color: var(--gold-bright); background: none; border: none; cursor: pointer; text-decoration: underline;">진단 시작</button>
+                    </div>
+                    <div id="diagnostic-results" class="diagnostic-results" style="font-size: 0.75rem; color: #8F9CAE; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 6px; font-family: monospace; white-space: pre-wrap; display: none; line-height: 1.2rem; border: 1px solid rgba(255,255,255,0.05);">
+                        진단 대기 중...
+                    </div>
+                </div>
+
+                <!-- 다른 기기 간편 연동 링크 (Version 7.5 추가) -->
+                <div class="share-box" id="settings-share-box" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--gold-bright); font-size: 0.8rem;">🔗 다른 기기 간편 연동 링크 생성</strong>
+                        <button type="button" class="btn-text" id="btn-generate-share-link" onclick="generateShareLink()" style="font-size: 0.75rem; color: var(--gold-bright); background: none; border: none; cursor: pointer; text-decoration: underline;">링크 생성하기</button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" id="share-link-input" class="form-control" readonly placeholder="링크 생성 버튼을 누르면 링크가 표시됩니다." style="font-size: 0.7rem; padding: 0.4rem; display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); flex-grow: 1;">
+                        <button type="button" class="btn btn-sm btn-primary" id="btn-copy-share-link" onclick="copyShareLink()" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; display: none; height: 32px;">복사</button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="btn-disconnect-supabase">연동 해제</button>
@@ -522,6 +545,6 @@
     </div>
 
     <!-- Modular Script Injection -->
-    <script src="app.js?v=7.3"></script>
+    <script src="app.js?v=7.5"></script>
 </body>
 </html>
