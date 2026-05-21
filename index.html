@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
 
     <!-- PWA Settings (Installable App) -->
     <link rel="manifest" href="manifest.json">
@@ -81,24 +81,20 @@
                         </div>
                     </div>
 
-                    <!-- Psychological Discipline Stats (심리 보완 획기적 지표) -->
-                    <div class="dash-card psychology-card">
+                    <!-- Cumulative PnL Period Filter (누적손익 기간 필터) -->
+                    <div class="dash-card period-filter-card">
                         <div class="dash-card-header">
-                            <span>심리적 통제 지표 (Mind Control)</span>
-                            <i data-lucide="brain" class="card-icon"></i>
+                            <span>누적손익 기간 필터 (PnL Period)</span>
+                            <i data-lucide="calendar" class="card-icon"></i>
                         </div>
-                        <div class="psychology-analysis">
-                            <div class="stat-winrate-by-mind">
-                                <span class="label">원칙 매매 승률:</span>
-                                <span class="value success-color" id="stat-mind-disciplined-winrate">-%</span>
-                            </div>
-                            <div class="stat-winrate-by-mind">
-                                <span class="label">감정 매매 승률:</span>
-                                <span class="value danger-color" id="stat-mind-emotional-winrate">-%</span>
-                            </div>
+                        <div class="period-selector">
+                            <button type="button" class="period-btn active" data-period="ALL">전체</button>
+                            <button type="button" class="period-btn" data-period="MONTH">월단위</button>
+                            <button type="button" class="period-btn" data-period="WEEK">주단위</button>
+                            <button type="button" class="period-btn" data-period="DAY">일단위</button>
                         </div>
-                        <div class="dash-card-sub text-center" id="stat-mind-suggestion">
-                            감정이 흔들릴 때 손실 확률이 극대화됩니다. 원칙 준수가 생명입니다!
+                        <div class="period-desc" id="stat-period-desc">
+                            모든 기간의 누적 손익과 승률 통계를 확인합니다.
                         </div>
                     </div>
 
@@ -482,6 +478,6 @@
     </div>
 
     <!-- Modular Script Injection -->
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>

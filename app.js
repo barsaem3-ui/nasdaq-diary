@@ -7,7 +7,7 @@
  */
 
 // Force cache cleanup & Service Worker unregistration if version changes
-const APP_VERSION = '3.0';
+const APP_VERSION = '4.0';
 if (localStorage.getItem('app_version') !== APP_VERSION) {
     localStorage.setItem('app_version', APP_VERSION);
     if ('serviceWorker' in navigator) {
@@ -42,6 +42,7 @@ if ('serviceWorker' in navigator) {
 let db = null;
 let supabaseClient = null;
 let tradesList = [];
+let activePeriod = 'ALL'; // PnL Calculation Period: ALL, MONTH, WEEK, DAY
 
 // Image editing temp states
 let imageDeleteModes = {
@@ -59,14 +60,14 @@ const elements = {
     
     // Stats Dashboard
     statTotalPnl: document.getElementById('stat-total-pnl'),
+    statPnlLabel: document.getElementById('stat-pnl-label'),
     statWinRate: document.getElementById('stat-win-rate'),
     statWinrateBar: document.getElementById('stat-winrate-bar'),
     statWinRatio: document.getElementById('stat-win-ratio'),
     statTotalTrades: document.getElementById('stat-total-trades'),
     statTotalContracts: document.getElementById('stat-total-contracts'),
-    statMindDisciplinedWinrate: document.getElementById('stat-mind-disciplined-winrate'),
-    statMindEmotionalWinrate: document.getElementById('stat-mind-emotional-winrate'),
-    statMindSuggestion: document.getElementById('stat-mind-suggestion'),
+    periodBtns: document.querySelectorAll('.period-btn'),
+    statPeriodDesc: document.getElementById('stat-period-desc'),
     
     // Filters
     filterPosition: document.getElementById('filter-position'),
@@ -594,19 +595,37 @@ function setupFormListeners() {
 // 6. UI Renders (Cards Grid, Dashboard & Mind Stats)
 // ==========================================================================
 function updateDashboardStats() {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Monday of this week (Standard trading week start)
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const startOfThisWeek = new Date(startOfToday.getTime() + diffToMonday * 24 * 60 * 60 * 1000);
+    
+    // 1st of current calendar month
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Filter the trades list based on activePeriod
+    const filteredTrades = tradesList.filter(trade => {
+        const tradeDate = new Date(trade.trade_date);
+        if (activePeriod === 'DAY') {
+            return tradeDate >= startOfToday;
+        } else if (activePeriod === 'WEEK') {
+            return tradeDate >= startOfThisWeek;
+        } else if (activePeriod === 'MONTH') {
+            return tradeDate >= startOfThisMonth;
+        }
+        return true; // 'ALL'
+    });
+    
     let totalPnl = 0;
-    let totalTrades = tradesList.length;
+    let totalTrades = filteredTrades.length;
     let totalContracts = 0;
     let wins = 0;
     let losses = 0;
     
-    // Psychological statistics tracking
-    let mindCounts = {
-        disciplined: { count: 0, wins: 0 },
-        emotional: { count: 0, wins: 0 } // Grouping impatient, revenge, fomo, fear
-    };
-    
-    tradesList.forEach(trade => {
+    filteredTrades.forEach(trade => {
         totalPnl += trade.profit_loss;
         totalContracts += trade.contracts;
         
@@ -615,15 +634,6 @@ function updateDashboardStats() {
             wins++;
         } else {
             losses++;
-        }
-        
-        // Group psychological states
-        const isDisciplined = trade.mind_tag === 'disciplined';
-        const group = isDisciplined ? 'disciplined' : 'emotional';
-        
-        mindCounts[group].count++;
-        if (isWin) {
-            mindCounts[group].wins++;
         }
     });
     
@@ -641,43 +651,40 @@ function updateDashboardStats() {
         elements.statTotalPnl.style.color = 'white';
     }
     
-    // 2. Render Win Rate
+    // 2. Render P&L Period Label
+    if (elements.statPnlLabel) {
+        if (activePeriod === 'DAY') {
+            elements.statPnlLabel.textContent = '오늘 기준 (수수료 $4 반영)';
+        } else if (activePeriod === 'WEEK') {
+            elements.statPnlLabel.textContent = '이번 주 기준 (수수료 $4 반영)';
+        } else if (activePeriod === 'MONTH') {
+            elements.statPnlLabel.textContent = '이번 달 기준 (수수료 $4 반영)';
+        } else {
+            elements.statPnlLabel.textContent = '계약당 수수료 $4 반영됨';
+        }
+    }
+    
+    // 3. Render Win Rate
     const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
     elements.statWinRate.textContent = `${winRate}%`;
     elements.statWinrateBar.style.width = `${winRate}%`;
     elements.statWinRatio.textContent = `${wins}승 / ${losses}패`;
     
-    // 3. Render Totals
+    // 4. Render Totals
     elements.statTotalTrades.textContent = `${totalTrades}회`;
     elements.statTotalContracts.textContent = `${totalContracts}계약`;
     
-    // 4. Render Mind Control Analytics
-    const discWinrate = mindCounts.disciplined.count > 0 
-        ? Math.round((mindCounts.disciplined.wins / mindCounts.disciplined.count) * 100) : null;
-        
-    const emoWinrate = mindCounts.emotional.count > 0 
-        ? Math.round((mindCounts.emotional.wins / mindCounts.emotional.count) * 100) : null;
-        
-    elements.statMindDisciplinedWinrate.textContent = discWinrate !== null ? `${discWinrate}%` : '데이터 없음';
-    elements.statMindEmotionalWinrate.textContent = emoWinrate !== null ? `${emoWinrate}%` : '데이터 없음';
-    
-    // 5. Custom Dynamic Psychological Coaching Message
-    if (totalTrades === 0) {
-        elements.statMindSuggestion.textContent = '일기를 작성하시면 매매 단점을 추적하고 교정해 드립니다.';
-    } else {
-        if (discWinrate !== null && emoWinrate !== null) {
-            const gap = discWinrate - emoWinrate;
-            if (gap > 15) {
-                elements.statMindSuggestion.innerHTML = `💡 <strong>단점 극복 조언:</strong> 원칙 평온 매매 시 승률(${discWinrate}%)이 감정 매매(${emoWinrate}%)보다 무려 <strong>${gap}%</strong> 높습니다! 뇌동과 조급함을 봉인하세요.`;
-            } else if (emoWinrate > discWinrate) {
-                elements.statMindSuggestion.textContent = '💡 통계 보완 중: 진입 사유를 차분히 재조정하여 통계 왜곡을 줄이고 냉정을 유지하세요.';
-            } else {
-                elements.statMindSuggestion.textContent = '💡 뇌동 차단 조언: 진입 전 3초만 눈을 감고 십계명 수칙을 확인하여 평온한 심리를 유지하십시오.';
-            }
-        } else if (discWinrate !== null) {
-            elements.statMindSuggestion.textContent = '👍 원칙 매매 유지 중! 차분하게 계획에 기각되는 포지션을 거르는 습관을 이어나가십시오.';
-        } else if (emoWinrate !== null) {
-            elements.statMindSuggestion.innerHTML = '⚠️ <strong>경고:</strong> 현재 모든 거래가 <strong>감정(조급함/분노/탐욕)</strong>에 휩쓸려 기록되었습니다! 차트를 덮고 십계명 수칙을 한 번만 정독하십시오.';
+    // 5. Update Helper Description
+    if (elements.statPeriodDesc) {
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        if (activePeriod === 'DAY') {
+            elements.statPeriodDesc.innerHTML = `📅 <strong>오늘</strong> (${startOfToday.toLocaleDateString('ko-KR', options)}) 하루 동안 진행된 매매 성과입니다.`;
+        } else if (activePeriod === 'WEEK') {
+            elements.statPeriodDesc.innerHTML = `📅 <strong>이번 주</strong> (${startOfThisWeek.toLocaleDateString('ko-KR', options)} ~ 현재) 진행된 누적 매매 성과입니다.`;
+        } else if (activePeriod === 'MONTH') {
+            elements.statPeriodDesc.innerHTML = `📅 <strong>이번 달</strong> (${startOfThisMonth.toLocaleDateString('ko-KR', options)} ~ 현재) 진행된 누적 매매 성과입니다.`;
+        } else {
+            elements.statPeriodDesc.innerHTML = `📊 <strong>전체 기간</strong> 동안 축적된 매매 일지의 누적 통계 성과입니다.`;
         }
     }
 }
@@ -1178,6 +1185,19 @@ function bindEventListeners() {
     if (elements.filterPosition) elements.filterPosition.addEventListener('change', renderTradesGrid);
     if (elements.filterResult) elements.filterResult.addEventListener('change', renderTradesGrid);
     if (elements.filterMind) elements.filterMind.addEventListener('change', renderTradesGrid);
+    
+    // Period Filter Controls
+    if (elements.periodBtns) {
+        elements.periodBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget;
+                elements.periodBtns.forEach(b => b.classList.remove('active'));
+                target.classList.add('active');
+                activePeriod = target.getAttribute('data-period');
+                updateDashboardStats();
+            });
+        });
+    }
     
     // Sync Button
     elements.btnSyncNow.addEventListener('click', syncDataWithCloud);
